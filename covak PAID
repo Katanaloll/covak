@@ -4,7 +4,6 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local RunService = game:GetService("RunService")
 
--- Fetch values dynamically (Ensures settings update every execution)
 local camlockEnabled = getgenv().covakSettings.Camlock.Enabled
 local triggerbotEnabled = getgenv().covakSettings.Triggerbot.Enabled
 local smoothnessX = getgenv().covakSettings.Camlock.Smoothness.X
@@ -17,7 +16,6 @@ local triggerbotKey = getgenv().covakSettings.Triggerbot.Keybind
 
 local lockedTarget, lockedPart, lastTargetPos = nil, nil, nil
 
--- Remove old keybind connections before registering new ones
 if _G.CamlockConnection then _G.CamlockConnection:Disconnect() _G.CamlockConnection = nil end
 if _G.TriggerbotConnection then _G.TriggerbotConnection:Disconnect() _G.TriggerbotConnection = nil end
 
@@ -49,7 +47,6 @@ local function getClosestPartOfPlayer(player)
     return nil
 end
 
--- Camlock Logic (Ensures smoothness & prediction reset properly)
 local function updateCamlock()
     if camlockEnabled and lockedTarget then
         local humanoid = lockedTarget.Character and lockedTarget.Character:FindFirstChild("Humanoid")
@@ -75,7 +72,6 @@ local function updateCamlock()
     end
 end
 
--- Triggerbot Logic (Ensures dynamic updates on execution)
 local function updateTriggerbot()
     if triggerbotEnabled then
         local mouse = LocalPlayer:GetMouse()
@@ -92,7 +88,6 @@ local function updateTriggerbot()
     end
 end
 
--- UI Notification for Config Update (Shows when settings change)
 local StarterGui = game:GetService("StarterGui")
 StarterGui:SetCore("SendNotification", {
     Title = "Covak Script";
@@ -100,7 +95,6 @@ StarterGui:SetCore("SendNotification", {
     Duration = 3;
 })
 
--- Keybind Activation (Removes old bindings before setting new ones)
 _G.CamlockConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == camlockKey then
         camlockEnabled = not camlockEnabled
@@ -123,6 +117,5 @@ _G.TriggerbotConnection = UserInputService.InputBegan:Connect(function(input, ga
     end
 end)
 
--- Continuous Execution (Ensures camlock & triggerbot run cleanly)
 RunService.RenderStepped:Connect(updateCamlock)
 while triggerbotEnabled do updateTriggerbot() end
