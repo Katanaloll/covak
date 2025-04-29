@@ -1,0 +1,161 @@
+local success, Library = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+end)
+
+if not success then
+    warn("⚠️ Failed to load Kavo UI Library!")
+    return
+end
+
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local RunService = game:GetService("RunService")
+
+local camlockEnabled = false
+local triggerbotEnabled = false
+local smoothnessX = 0.1
+local smoothnessY = 0.1
+local predictionX = 0.5
+local predictionY = 0.5
+local triggerDelay = 0.01
+local camlockKey = Enum.KeyCode.C
+local lockedTarget, lockedPart, lastTargetPos = nil, nil, nil
+
+local function lerp(a, b, t) return a + (b - a) * t end
+
+local function getClosestPlayerToMouse()
+    local mouseLocation = UserInputService:GetMouseLocation()
+    local closestPlayer, closestDistance = nil, math.huge
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local worldPos = player.Character.HumanoidRootPart.Position
+            local screenPos, onScreen = Camera:WorldToViewportPoint(worldPos)
+
+            if onScreen then
+                local distance = (Vector2.new(screenPos.X, screenPos.Y) - mouseLocation).Magnitude
+                if distance < closestDistance then
+                    closestDistance = distance
+                    closestPlayer = player
+                end
+            end
+        end
+    end
+    return closestPlayer
+end
+
+local function getClosestPartOfPlayer(player)
+    if player and player.Character then
+        local rootPart = player.Character:FindFirstChild("HumanoidRootPart")
+        return rootPart
+    end
+    return nil
+end
+
+local Window = Library.CreateLib("Covak", "DarkTheme")
+local Tab = Window:NewTab("Combat")
+local CamlockSection = Tab:NewSection("Camlock")
+local TriggerbotSection = Tab:NewSection("Triggerbot")
+
+CamlockSection:NewToggle("Enable Camlock", "Toggle Camlock Locking", function(Value)
+    camlockEnabled = Value
+    if camlockEnabled then
+        lockedTarget = getClosestPlayerToMouse() -- Always find a target when enabled
+        lockedPart = getClosestPartOfPlayer(lockedTarget)
+
+        if not _G.CamlockConnection then
+            _G.CamlockConnection = RunService.RenderStepped:Connect(function()
+                if camlockEnabled and lockedTarget then
+                    local humanoid = lockedTarget.Character and lockedTarget.Character:FindFirstChild("Humanoid")
+                    if humanoid and humanoid.Health <= 5 then
+                        camlockEnabled = false
+                        lockedTarget, lockedPart, lastTargetPos = nil, nil, nil
+                        return
+                    end
+
+                    if lockedPart then
+                        local predictedPos = lockedPart.Position + Vector3.new(
+                            lockedTarget.Character.HumanoidRootPart.Velocity.X * predictionX,
+                            lockedTarget.Character.HumanoidRootPart.Velocity.Y * predictionY,
+                            0
+                        )
+
+                        lastTargetPos = lastTargetPos and lastTargetPos:Lerp(predictedPos, smoothnessX) or predictedPos
+                        Camera.CFrame = Camera.CFrame:Lerp(CFrame.lookAt(Camera.CFrame.Position, lastTargetPos), smoothnessX)
+                    else
+                        camlockEnabled = false
+                        lockedTarget, lockedPart, lastTargetPos = nil, nil, nil
+                    end
+                end
+            end)
+        end
+    else
+        if _G.CamlockConnection then _G.CamlockConnection:Disconnect() _G.CamlockConnection = nil end
+        lockedTarget, lockedPart, lastTargetPos = nil, nil, nil -- Reset lock when disabled
+    end
+end)
+
+CamlockSection:NewTextBox("Smoothness X", "Enter horizontal smoothness (0.01 - 1)", function(Value)
+    local numValue = tonumber(Value) if numValue and numValue >= 0.01 and numValue <= 1 then smoothnessX = numValue
+    else warn("⚠️ Invalid SmoothnessX value. Enter a number between 0.01 and 1.") end
+end)
+
+CamlockSection:NewTextBox("Smoothness Y", "Enter vertical smoothness (0.01 - 1)", function(Value)
+    local numValue = tonumber(Value) if numValue and numValue >= 0.01 and numValue <= 1 then smoothnessY = numValue
+    else warn("⚠️ Invalid SmoothnessY value. Enter a number between 0.01 and 1.") end
+end)
+
+CamlockSection:NewTextBox("Prediction X", "Enter horizontal prediction (0.1 - 1)", function(Value)
+    local numValue = tonumber(Value) if numValue and numValue >= 0.1 and numValue <= 1 then predictionX = numValue
+    else warn("⚠️ Invalid PredictionX value. Enter a number between 0.1 and 1.") end
+end)
+
+CamlockSection:NewTextBox("Prediction Y", "Enter vertical prediction (0.1 - 1)", function(Value)
+    local numValue = tonumber(Value) if numValue and numValue >= 0.1 and numValue <= 1 then predictionY = numValue
+    else warn("⚠️ Invalid PredictionY value. Enter a number between 0.1 and 1.") end
+end)
+
+TriggerbotSection:NewToggle("Enable Triggerbot", "Toggle automatic firing", function(Value)
+    triggerbotEnabled = Value
+    if triggerbotEnabled then
+        task.spawn(function()
+            while triggerbotEnabled do
+                local player = game:GetService("Players").LocalPlayer
+                local mouse = player:GetMouse()
+                local target = mouse.Target
+
+                if target and target.Parent:IsA("Model") and target.Parent:FindFirstChild("Humanoid") then
+                    local humanoid = target.Parent:FindFirstChild("Humanoid")
+                    if humanoid and humanoid.Health > 0 then
+                        mouse1click()
+                    end
+                end
+
+                wait(triggerDelay)
+            end
+        end)
+    end
+end)
+
+TriggerbotSection:NewTextBox("Trigger Delay", "Enter trigger delay (0.01 - 1)", function(Value)
+    local numValue = tonumber(Value)
+    if numValue and numValue >= 0.01 and numValue <= 1 then triggerDelay = numValue
+    else warn("⚠️ Invalid Trigger Delay. Enter a number between 0.01 and 1.") end
+end)
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.KeyCode == camlockKey then
+        camlockEnabled = not camlockEnabled
+        if camlockEnabled then
+            lockedTarget = getClosestPlayerToMouse() -- Locks onto new target when enabled
+            lockedPart = getClosestPartOfPlayer(lockedTarget)
+            lastTargetPos = lockedPart and lockedPart.Position
+            print("Locked onto:", lockedTarget and lockedTarget.Name or "None")
+        else
+            lockedTarget, lockedPart, lastTargetPos = nil, nil, nil -- Fully unlock Camlock
+            print("Camlock Disabled")
+        end
+    end
+end)
