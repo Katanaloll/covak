@@ -4,15 +4,17 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local RunService = game:GetService("RunService")
 
-local camlockEnabled = false
-local triggerbotEnabled = false
-local smoothnessX = 0.1
-local smoothnessY = 0.1
-local predictionX = 0.5
-local predictionY = 0.5
-local triggerDelay = 0.01
-local camlockKey = Enum.KeyCode.C
-local triggerbotKey = Enum.KeyCode.V -- New keybind for triggerbot toggle
+-- Fetch values dynamically from the settings table
+local camlockEnabled = getgenv().covakSettings.Camlock.Enabled
+local triggerbotEnabled = getgenv().covakSettings.Triggerbot.Enabled
+local smoothnessX = getgenv().covakSettings.Camlock.Smoothness.X
+local smoothnessY = getgenv().covakSettings.Camlock.Smoothness.Y
+local predictionX = getgenv().covakSettings.Camlock.Prediction.X
+local predictionY = getgenv().covakSettings.Camlock.Prediction.Y
+local triggerDelay = getgenv().covakSettings.Triggerbot.Delay
+local camlockKey = getgenv().covakSettings.Camlock.Keybind
+local triggerbotKey = getgenv().covakSettings.Triggerbot.Keybind
+
 local lockedTarget, lockedPart, lastTargetPos = nil, nil, nil
 
 local function getClosestPlayerToMouse()
@@ -38,7 +40,7 @@ end
 
 local function getClosestPartOfPlayer(player)
     if player and player.Character then
-        return player.Character:FindFirstChild("HumanoidRootPart")
+        return player.Character:FindFirstChild(getgenv().covakSettings.Camlock.HitPart)
     end
     return nil
 end
