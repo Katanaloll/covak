@@ -4,14 +4,14 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local RunService = game:GetService("RunService")
 
--- Ensure only one instance of the script runs
+-- Prevent multiple instances from stacking
 if _G.CovakScriptRunning then
     warn("⚠️ Script already running! Preventing duplicate execution.")
     return
 end
 _G.CovakScriptRunning = true
 
--- Fetch values dynamically from the settings table
+-- Fetch values dynamically from the settings table (Ensures fresh settings per execution)
 local camlockEnabled = getgenv().covakSettings.Camlock.Enabled
 local triggerbotEnabled = getgenv().covakSettings.Triggerbot.Enabled
 local smoothnessX = getgenv().covakSettings.Camlock.Smoothness.X
@@ -21,9 +21,10 @@ local predictionY = getgenv().covakSettings.Camlock.Prediction.Y
 local triggerDelay = getgenv().covakSettings.Triggerbot.Delay
 local camlockKey = getgenv().covakSettings.Camlock.Keybind
 local triggerbotKey = getgenv().covakSettings.Triggerbot.Keybind
+
 local lockedTarget, lockedPart, lastTargetPos = nil, nil, nil
 
--- Remove old keybinds before registering new ones
+-- Remove old keybind connections before registering new ones
 if _G.CamlockConnection then _G.CamlockConnection:Disconnect() _G.CamlockConnection = nil end
 if _G.TriggerbotConnection then _G.TriggerbotConnection:Disconnect() _G.TriggerbotConnection = nil end
 
@@ -55,7 +56,7 @@ local function getClosestPartOfPlayer(player)
     return nil
 end
 
--- Camlock Logic
+-- Camlock Logic (Ensures smoothness and prediction reset properly)
 local function updateCamlock()
     if camlockEnabled and lockedTarget then
         local humanoid = lockedTarget.Character and lockedTarget.Character:FindFirstChild("Humanoid")
@@ -81,7 +82,7 @@ local function updateCamlock()
     end
 end
 
--- Triggerbot Logic
+-- Triggerbot Logic (Ensures dynamic updates on execution)
 local function updateTriggerbot()
     if triggerbotEnabled then
         local mouse = LocalPlayer:GetMouse()
@@ -98,7 +99,7 @@ local function updateTriggerbot()
     end
 end
 
--- UI Notification for Config Update
+-- UI Notification for Config Update (Shows when settings change)
 local StarterGui = game:GetService("StarterGui")
 StarterGui:SetCore("SendNotification", {
     Title = "Covak Script";
@@ -106,7 +107,7 @@ StarterGui:SetCore("SendNotification", {
     Duration = 3;
 })
 
--- Keybind Activation for Camlock & Triggerbot (Only Accepts Updated Keys)
+-- Keybind Activation (Removes old bindings before setting new ones)
 _G.CamlockConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == camlockKey then
         camlockEnabled = not camlockEnabled
@@ -129,6 +130,6 @@ _G.TriggerbotConnection = UserInputService.InputBegan:Connect(function(input, ga
     end
 end)
 
--- Continuous Execution
+-- Continuous Execution (Ensures camlock & triggerbot run cleanly)
 RunService.RenderStepped:Connect(updateCamlock)
 while triggerbotEnabled do updateTriggerbot() end
