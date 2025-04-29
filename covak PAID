@@ -4,14 +4,7 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local RunService = game:GetService("RunService")
 
--- Prevent multiple instances from stacking
-if _G.CovakScriptRunning then
-    warn("⚠️ Script already running! Preventing duplicate execution.")
-    return
-end
-_G.CovakScriptRunning = true
-
--- Fetch values dynamically from the settings table (Ensures fresh settings per execution)
+-- Fetch values dynamically (Ensures settings update every execution)
 local camlockEnabled = getgenv().covakSettings.Camlock.Enabled
 local triggerbotEnabled = getgenv().covakSettings.Triggerbot.Enabled
 local smoothnessX = getgenv().covakSettings.Camlock.Smoothness.X
@@ -56,7 +49,7 @@ local function getClosestPartOfPlayer(player)
     return nil
 end
 
--- Camlock Logic (Ensures smoothness and prediction reset properly)
+-- Camlock Logic (Ensures smoothness & prediction reset properly)
 local function updateCamlock()
     if camlockEnabled and lockedTarget then
         local humanoid = lockedTarget.Character and lockedTarget.Character:FindFirstChild("Humanoid")
