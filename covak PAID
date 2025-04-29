@@ -4,6 +4,13 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local RunService = game:GetService("RunService")
 
+-- Ensure only one instance of the script runs
+if _G.CovakScriptRunning then
+    warn("⚠️ Script already running! Preventing duplicate execution.")
+    return
+end
+_G.CovakScriptRunning = true
+
 -- Fetch values dynamically from the settings table
 local camlockEnabled = getgenv().covakSettings.Camlock.Enabled
 local triggerbotEnabled = getgenv().covakSettings.Triggerbot.Enabled
@@ -14,8 +21,11 @@ local predictionY = getgenv().covakSettings.Camlock.Prediction.Y
 local triggerDelay = getgenv().covakSettings.Triggerbot.Delay
 local camlockKey = getgenv().covakSettings.Camlock.Keybind
 local triggerbotKey = getgenv().covakSettings.Triggerbot.Keybind
-
 local lockedTarget, lockedPart, lastTargetPos = nil, nil, nil
+
+-- Remove old keybinds before registering new ones
+if _G.CamlockConnection then _G.CamlockConnection:Disconnect() _G.CamlockConnection = nil end
+if _G.TriggerbotConnection then _G.TriggerbotConnection:Disconnect() _G.TriggerbotConnection = nil end
 
 local function getClosestPlayerToMouse()
     local mouseLocation = UserInputService:GetMouseLocation()
@@ -88,8 +98,16 @@ local function updateTriggerbot()
     end
 end
 
--- Keybind Activation for Camlock & Triggerbot
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
+-- UI Notification for Config Update
+local StarterGui = game:GetService("StarterGui")
+StarterGui:SetCore("SendNotification", {
+    Title = "Covak Script";
+    Text = "Config Updated!";
+    Duration = 3;
+})
+
+-- Keybind Activation for Camlock & Triggerbot (Only Accepts Updated Keys)
+_G.CamlockConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == camlockKey then
         camlockEnabled = not camlockEnabled
         if camlockEnabled then
@@ -101,7 +119,11 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
             lockedTarget, lockedPart, lastTargetPos = nil, nil, nil
             print("Camlock Disabled")
         end
-    elseif input.KeyCode == triggerbotKey then
+    end
+end)
+
+_G.TriggerbotConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.KeyCode == triggerbotKey then
         triggerbotEnabled = not triggerbotEnabled
         print("Triggerbot:", triggerbotEnabled and "Enabled" or "Disabled")
     end
