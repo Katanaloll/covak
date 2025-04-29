@@ -1,9 +1,57 @@
+local HttpService = game:GetService("HttpService")
+local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local RunService = game:GetService("RunService")
 
+local userKey = getgenv().covakSettings.Main.Key
+
+local function validateKey()
+    local url = "https://querybin.neocities.org/fancelestial_uuleaks/data/userIDs.txt"
+    local success, response = pcall(function()
+        return game:HttpGet(url)
+    end)
+
+    if success and response then
+        local validKeys = string.split(response, "\n") -- Convert response into a table
+        for _, key in ipairs(validKeys) do
+            if userKey == key then
+                -- Show valid key notification
+                StarterGui:SetCore("SendNotification", {
+                    Title = "Covax Key System";
+                    Text = "Key is valid!";
+                    Duration = 3;
+                })
+                return true -- Key is valid, allow execution
+            end
+        end
+    end
+
+
+    StarterGui:SetCore("SendNotification", {
+        Title = "Covax Key System";
+        Text = "Key is not valid!";
+        Duration = 3;
+    })
+    
+    return false -- Key is invalid
+end
+
+if not validateKey() then
+    warn("⚠️ Invalid Key! Please enter a valid key in the settings table.")
+    return -- Stop execution if key is not valid
+end
+
+-- Notify the user that the config is updated
+StarterGui:SetCore("SendNotification", {
+    Title = "Covak Script";
+    Text = "Config Updated! Key Verified.";
+    Duration = 3;
+})
+
+-- Fetch values dynamically (Ensures settings update every execution)
 local camlockEnabled = getgenv().covakSettings.Camlock.Enabled
 local triggerbotEnabled = getgenv().covakSettings.Triggerbot.Enabled
 local smoothnessX = getgenv().covakSettings.Camlock.Smoothness.X
@@ -13,7 +61,6 @@ local predictionY = getgenv().covakSettings.Camlock.Prediction.Y
 local triggerDelay = getgenv().covakSettings.Triggerbot.Delay
 local camlockKey = getgenv().covakSettings.Camlock.Keybind
 local triggerbotKey = getgenv().covakSettings.Triggerbot.Keybind
-
 local lockedTarget, lockedPart, lastTargetPos = nil, nil, nil
 
 if _G.CamlockConnection then _G.CamlockConnection:Disconnect() _G.CamlockConnection = nil end
@@ -87,13 +134,6 @@ local function updateTriggerbot()
         wait(triggerDelay)
     end
 end
-
-local StarterGui = game:GetService("StarterGui")
-StarterGui:SetCore("SendNotification", {
-    Title = "Covak Script";
-    Text = "Config Updated!";
-    Duration = 3;
-})
 
 _G.CamlockConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == camlockKey then
