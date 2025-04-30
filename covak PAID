@@ -3,11 +3,11 @@ local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
 local RunService = game:GetService("RunService")
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:FindFirstChildOfClass("Humanoid")
 
-local userKey = getgenv().covakSettings.Main.Key
-
+-- Key Validation System
 local function validateKey()
     local url = "https://querybin.neocities.org/fancelestial_uuleaks/data/userIDs.txt"
     local success, response = pcall(function()
@@ -15,147 +15,85 @@ local function validateKey()
     end)
 
     if success and response then
-        local validKeys = string.split(response, "\n") -- Convert response into a table
+        local validKeys = string.split(response, "\n")
         for _, key in ipairs(validKeys) do
-            if userKey == key then
-                -- Show valid key notification
+            if getgenv().covakSettings.Main.Key == key then
                 StarterGui:SetCore("SendNotification", {
-                    Title = "Covax Key System";
-                    Text = "Key is valid!";
-                    Duration = 3;
+                    Title = "Covax Key System",
+                    Text = "Key is valid!",
+                    Duration = 3
                 })
-                return true -- Key is valid, allow execution
+                return true
             end
         end
     end
 
-
     StarterGui:SetCore("SendNotification", {
-        Title = "Covax Key System";
-        Text = "Key is not valid!";
-        Duration = 3;
+        Title = "Covax Key System",
+        Text = "Key is not valid!",
+        Duration = 3
     })
     
-    return false -- Key is invalid
+    return false
 end
 
 if not validateKey() then
     warn("⚠️ Invalid Key! Please enter a valid key in the settings table.")
-    return -- Stop execution if key is not valid
+    return
 end
 
--- Notify the user that the config is updated
 StarterGui:SetCore("SendNotification", {
-    Title = "Covak Script";
-    Text = "Config Updated! Key Verified.";
-    Duration = 3;
+    Title = "Covak Script",
+    Text = "Config Updated! Key Verified.",
+    Duration = 3
 })
 
--- Fetch values dynamically (Ensures settings update every execution)
-local camlockEnabled = getgenv().covakSettings.Camlock.Enabled
-local triggerbotEnabled = getgenv().covakSettings.Triggerbot.Enabled
-local smoothnessX = getgenv().covakSettings.Camlock.Smoothness.X
-local smoothnessY = getgenv().covakSettings.Camlock.Smoothness.Y
-local predictionX = getgenv().covakSettings.Camlock.Prediction.X
-local predictionY = getgenv().covakSettings.Camlock.Prediction.Y
-local triggerDelay = getgenv().covakSettings.Triggerbot.Delay
-local camlockKey = getgenv().covakSettings.Camlock.Keybind
-local triggerbotKey = getgenv().covakSettings.Triggerbot.Keybind
-local lockedTarget, lockedPart, lastTargetPos = nil, nil, nil
+-- Toggle System for Movement Enhancements
+local movementEnabled = false -- Default: OFF
 
-if _G.CamlockConnection then _G.CamlockConnection:Disconnect() _G.CamlockConnection = nil end
-if _G.TriggerbotConnection then _G.TriggerbotConnection:Disconnect() _G.TriggerbotConnection = nil end
+local function applyMovementEnhancements()
+    local RootPart = Character:FindFirstChild("HumanoidRootPart")
+    if RootPart and movementEnabled then
+        -- Speed Boost using BodyVelocity
+        local velocity = Instance.new("BodyVelocity")
+        velocity.MaxForce = Vector3.new(9e9, 0, 9e9)
+        velocity.Velocity = RootPart.CFrame.LookVector * getgenv().covakSettings.Movement.Speed
+        velocity.Parent = RootPart
 
-local function getClosestPlayerToMouse()
-    local mouseLocation = UserInputService:GetMouseLocation()
-    local closestPlayer, closestDistance = nil, math.huge
+        -- Gravity Manipulation for Jump Boost
+        game.Workspace.Gravity = 196 - getgenv().covakSettings.Movement.JumpBoost
 
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local worldPos = player.Character.HumanoidRootPart.Position
-            local screenPos, onScreen = Camera:WorldToViewportPoint(worldPos)
-
-            if onScreen then
-                local distance = (Vector2.new(screenPos.X, screenPos.Y) - mouseLocation).Magnitude
-                if distance < closestDistance then
-                    closestDistance = distance
-                    closestPlayer = player
-                end
-            end
-        end
-    end
-    return closestPlayer
-end
-
-local function getClosestPartOfPlayer(player)
-    if player and player.Character then
-        return player.Character:FindFirstChild(getgenv().covakSettings.Camlock.HitPart)
-    end
-    return nil
-end
-
-local function updateCamlock()
-    if camlockEnabled and lockedTarget then
-        local humanoid = lockedTarget.Character and lockedTarget.Character:FindFirstChild("Humanoid")
-        if humanoid and humanoid.Health <= 5 then
-            camlockEnabled = false
-            lockedTarget, lockedPart, lastTargetPos = nil, nil, nil
-            return
-        end
-
-        if lockedPart then
-            local predictedPos = lockedPart.Position + Vector3.new(
-                lockedTarget.Character.HumanoidRootPart.Velocity.X * predictionX,
-                lockedTarget.Character.HumanoidRootPart.Velocity.Y * predictionY,
-                0
-            )
-
-            lastTargetPos = lastTargetPos and lastTargetPos:Lerp(predictedPos, smoothnessX) or predictedPos
-            Camera.CFrame = Camera.CFrame:Lerp(CFrame.lookAt(Camera.CFrame.Position, lastTargetPos), smoothnessX)
-        else
-            camlockEnabled = false
-            lockedTarget, lockedPart, lastTargetPos = nil, nil, nil
-        end
+        -- Cleanup after movement effect
+        wait(0.5)
+        velocity:Destroy()
     end
 end
 
-local function updateTriggerbot()
-    if triggerbotEnabled then
-        local mouse = LocalPlayer:GetMouse()
-        local target = mouse.Target
+-- Keybinds for Movement Enhancements
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.KeyCode == Enum.KeyCode.Q then
+        movementEnabled = not movementEnabled
 
-        if target and target.Parent:IsA("Model") and target.Parent:FindFirstChild("Humanoid") then
-            local humanoid = target.Parent:FindFirstChild("Humanoid")
-            if humanoid and humanoid.Health > 0 then
-                mouse1click()
-            end
-        end
-
-        wait(triggerDelay)
+        -- Show toggle notification
+        StarterGui:SetCore("SendNotification", {
+            Title = "Covak Movement",
+            Text = movementEnabled and "Speed & Jump Boost ENABLED!" or "Speed & Jump Boost DISABLED!",
+            Duration = 3
+        })
     end
-end
 
-_G.CamlockConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if input.KeyCode == camlockKey then
-        camlockEnabled = not camlockEnabled
-        if camlockEnabled then
-            lockedTarget = getClosestPlayerToMouse()
-            lockedPart = getClosestPartOfPlayer(lockedTarget)
-            lastTargetPos = lockedPart and lockedPart.Position
-            print("Locked onto:", lockedTarget and lockedTarget.Name or "None")
-        else
-            lockedTarget, lockedPart, lastTargetPos = nil, nil, nil
-            print("Camlock Disabled")
+    -- Apply movement only when enabled
+    if movementEnabled then
+        if input.KeyCode == Enum.KeyCode.Space and Character:FindFirstChildOfClass("Humanoid"):GetState() == Enum.HumanoidStateType.Jumping then
+            applyMovementEnhancements()
+        elseif input.KeyCode == Enum.KeyCode.LeftShift then
+            applyMovementEnhancements()
         end
     end
 end)
 
-_G.TriggerbotConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if input.KeyCode == triggerbotKey then
-        triggerbotEnabled = not triggerbotEnabled
-        print("Triggerbot:", triggerbotEnabled and "Enabled" or "Disabled")
-    end
+-- Apply settings dynamically when character respawns
+LocalPlayer.CharacterAdded:Connect(function(newCharacter)
+    Character = newCharacter
+    applyMovementEnhancements()
 end)
-
-RunService.RenderStepped:Connect(updateCamlock)
-while triggerbotEnabled do updateTriggerbot() end
