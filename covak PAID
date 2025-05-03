@@ -1,74 +1,54 @@
 local HttpService = game:GetService("HttpService")
 local StarterGui = game:GetService("StarterGui")
-local UserInputService = game:GetService("UserInputService")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
-local RunService = game:GetService("RunService")
+local pastebinURL = "https://pastebin.com/raw/nbZCTT4X" -- Your Pastebin raw link
 
--- Fetch user key from the settings table
-local userKey = getgenv().covakSettings.Main.Key
-
--- Validate key before running the script
+-- Validate Key Before Running Script
 local function validateKey()
-    local url = "https://querybin.neocities.org/fancelestial_uuleaks/data/userIDs.txt"
     local success, response = pcall(function()
-        return game:HttpGet(url)
+        return game:HttpGet(pastebinURL)
     end)
 
     if success and response then
-        local validKeys = string.split(response, "\n") -- Convert response into a table
+        local validKeys = string.split(response, "\n")
         for _, key in ipairs(validKeys) do
-            if userKey == key then
-                -- Show valid key notification
+            if getgenv().covakSettings.Main.Key == key then
                 StarterGui:SetCore("SendNotification", {
-                    Title = "Covax Key System";
-                    Text = "Key is valid!";
-                    Duration = 3;
+                    Title = "Covak Key System",
+                    Text = "Key is valid!",
+                    Duration = 3
                 })
-                return true -- Key is valid, allow execution
+                return true
             end
         end
     end
 
-    -- Show invalid key notification
     StarterGui:SetCore("SendNotification", {
-        Title = "Covax Key System";
-        Text = "Key is not valid!";
-        Duration = 3;
+        Title = "Covak Key System",
+        Text = "Key is not valid!",
+        Duration = 3
     })
-    
-    return false -- Key is invalid
+
+    return false
 end
 
--- Run validation check before executing script
+-- Stop Execution If Key Is Invalid
 if not validateKey() then
     warn("⚠️ Invalid Key! Please enter a valid key in the settings table.")
-    return -- Stop execution if key is not valid
+    return
 end
 
--- Notify the user that the config is updated
 StarterGui:SetCore("SendNotification", {
-    Title = "Covak Script";
-    Text = "Config Updated! Key Verified.";
-    Duration = 3;
+    Title = "Covak Script",
+    Text = "Config Updated! Key Verified.",
+    Duration = 3
 })
 
--- Fetch values dynamically (Ensures settings update every execution)
-local camlockEnabled = getgenv().covakSettings.Camlock.Enabled
-local triggerbotEnabled = getgenv().covakSettings.Triggerbot.Enabled
-local smoothnessX = getgenv().covakSettings.Camlock.Smoothness.X
-local smoothnessY = getgenv().covakSettings.Camlock.Smoothness.Y
-local predictionX = getgenv().covakSettings.Camlock.Prediction.X
-local predictionY = getgenv().covakSettings.Camlock.Prediction.Y
-local triggerDelay = getgenv().covakSettings.Triggerbot.Delay
-local camlockKey = getgenv().covakSettings.Camlock.Keybind
-local triggerbotKey = getgenv().covakSettings.Triggerbot.Keybind
-local lockedTarget, lockedPart, lastTargetPos = nil, nil, nil
-
--- Remove old keybind connections before registering new ones
-if _G.CamlockConnection then _G.CamlockConnection:Disconnect() _G.CamlockConnection = nil end
-if _G.TriggerbotConnection then _G.TriggerbotConnection:Disconnect() _G.TriggerbotConnection = nil end
+-- Camlock and Triggerbot Settings
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 local function getClosestPlayerToMouse()
     local mouseLocation = UserInputService:GetMouseLocation()
@@ -98,7 +78,37 @@ local function getClosestPartOfPlayer(player)
     return nil
 end
 
--- Camlock Logic (Ensures smoothness & prediction reset properly)
+local lockedTarget, lockedPart, lastTargetPos = nil, nil, nil
+local camlockEnabled = getgenv().covakSettings.Camlock.Enabled
+local triggerbotEnabled = getgenv().covakSettings.Triggerbot.Enabled
+local smoothnessX = getgenv().covakSettings.Camlock.Smoothness.X
+local smoothnessY = getgenv().covakSettings.Camlock.Smoothness.Y
+local predictionX = getgenv().covakSettings.Camlock.Prediction.X
+local predictionY = getgenv().covakSettings.Camlock.Prediction.Y
+local triggerDelay = getgenv().covakSettings.Triggerbot.Delay
+local camlockKey = getgenv().covakSettings.Camlock.Keybind
+local triggerbotKey = getgenv().covakSettings.Triggerbot.Keybind
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.KeyCode == camlockKey then
+        camlockEnabled = not camlockEnabled
+        if camlockEnabled then
+            lockedTarget = getClosestPlayerToMouse()
+            lockedPart = getClosestPartOfPlayer(lockedTarget)
+            lastTargetPos = lockedPart and lockedPart.Position
+            print("Locked onto:", lockedTarget and lockedTarget.Name or "None")
+        else
+            lockedTarget, lockedPart, lastTargetPos = nil, nil, nil
+            print("Camlock Disabled")
+        end
+    end
+
+    if input.KeyCode == triggerbotKey then
+        triggerbotEnabled = not triggerbotEnabled
+        print("Triggerbot:", triggerbotEnabled and "Enabled" or "Disabled")
+    end
+end)
+
 local function updateCamlock()
     if camlockEnabled and lockedTarget then
         local humanoid = lockedTarget.Character and lockedTarget.Character:FindFirstChild("Humanoid")
@@ -124,7 +134,6 @@ local function updateCamlock()
     end
 end
 
--- Triggerbot Logic (Ensures dynamic updates on execution)
 local function updateTriggerbot()
     if triggerbotEnabled then
         local mouse = LocalPlayer:GetMouse()
@@ -141,29 +150,5 @@ local function updateTriggerbot()
     end
 end
 
--- Keybind Activation (Removes old bindings before setting new ones)
-_G.CamlockConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if input.KeyCode == camlockKey then
-        camlockEnabled = not camlockEnabled
-        if camlockEnabled then
-            lockedTarget = getClosestPlayerToMouse()
-            lockedPart = getClosestPartOfPlayer(lockedTarget)
-            lastTargetPos = lockedPart and lockedPart.Position
-            print("Locked onto:", lockedTarget and lockedTarget.Name or "None")
-        else
-            lockedTarget, lockedPart, lastTargetPos = nil, nil, nil
-            print("Camlock Disabled")
-        end
-    end
-end)
-
-_G.TriggerbotConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if input.KeyCode == triggerbotKey then
-        triggerbotEnabled = not triggerbotEnabled
-        print("Triggerbot:", triggerbotEnabled and "Enabled" or "Disabled")
-    end
-end)
-
--- Continuous Execution (Ensures camlock & triggerbot run cleanly)
 RunService.RenderStepped:Connect(updateCamlock)
 while triggerbotEnabled do updateTriggerbot() end
