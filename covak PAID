@@ -11,7 +11,7 @@ local userKey = getgenv().covakSettings.Main.Key
 
 -- Validate key before running the script
 local function validateKey()
-    local url = "https://querybin.neocities.org/fancelestial_uuleaks/data/userIDs.txt"
+    local url = "https://pastebin.com/raw/nbZCTT4X"
     local success, response = pcall(function()
         return game:HttpGet(url)
     end)
