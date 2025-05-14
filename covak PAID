@@ -6,46 +6,6 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local RunService = game:GetService("RunService")
 
--- Fetch user key from the settings table
-local userKey = getgenv().covakSettings.Main.Key
-
--- Validate key before running the script
-local function validateKey()
-    local url = "https://paste-drop.com/raw/7YUivXRA9A"
-    local success, response = pcall(function()
-        return game:HttpGet(url)
-    end)
-
-    if success and response then
-        local validKeys = string.split(response, "\n") -- Convert response into a table
-        for _, key in ipairs(validKeys) do
-            if userKey == key then
-                -- Show valid key notification
-                StarterGui:SetCore("SendNotification", {
-                    Title = "Covax Key System";
-                    Text = "Key is valid!";
-                    Duration = 3;
-                })
-                return true -- Key is valid, allow execution
-            end
-        end
-    end
-
-    -- Show invalid key notification
-    StarterGui:SetCore("SendNotification", {
-        Title = "Covax Key System";
-        Text = "Key is not valid!";
-        Duration = 3;
-    })
-    
-    return false -- Key is invalid
-end
-
--- Run validation check before executing script
-if not validateKey() then
-    warn("⚠️ Invalid Key! Please enter a valid key in the settings table.")
-    return -- Stop execution if key is not valid
-end
 
 -- Notify the user that the config is updated
 StarterGui:SetCore("SendNotification", {
