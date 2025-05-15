@@ -94,18 +94,22 @@ local function getTarget()
     end
 end
 
-local function triggerbot()
-    while wait(0.05) do -- Adjustable delay
-        local target = getTarget()
-        if target then
-            -- Simulate firing action (modify based on your tool setup)
-            game:GetService("ReplicatedStorage").FireEvent:FireServer(target)
+-- Triggerbot Logic (Ensures dynamic updates on execution)
+local function updateTriggerbot()
+    if triggerbotEnabled then
+        local mouse = LocalPlayer:GetMouse()
+        local target = mouse.Target
+
+        if target and target.Parent:IsA("Model") and target.Parent:FindFirstChild("Humanoid") then
+            local humanoid = target.Parent:FindFirstChild("Humanoid")
+            if humanoid and humanoid.Health > 0 then
+                mouse1click()
+            end
         end
+
+        wait(triggerDelay)
     end
 end
-
--- Activate Triggerbot
-triggerbot()
 
 
 -- Keybind Activation (Removes old bindings before setting new ones)
