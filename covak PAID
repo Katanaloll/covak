@@ -99,14 +99,12 @@ local function updateTriggerbot()
     if triggerbotEnabled then
         local mouse = LocalPlayer:GetMouse()
         local target = mouse.Target
-
         if target and target.Parent:IsA("Model") and target.Parent:FindFirstChild("Humanoid") then
             local humanoid = target.Parent:FindFirstChild("Humanoid")
             if humanoid and humanoid.Health > 0 then
                 mouse1click()
             end
         end
-
         wait(triggerDelay)
     end
 end
