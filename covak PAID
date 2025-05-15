@@ -84,31 +84,22 @@ local function updateCamlock()
     end
 end
 
-local function getTarget()
-    local mouse = game.Players.LocalPlayer:GetMouse()
-    local ray = Ray.new(mouse.UnitRay.Origin, mouse.UnitRay.Direction * 100)
-    local part, position = workspace:FindPartOnRay(ray, game.Players.LocalPlayer.Character)
-
-    if part and part.Parent:IsA("Model") and part.Parent:FindFirstChild("Humanoid") then
-        return part.Parent
-    end
-end
-
 -- Triggerbot Logic (Ensures dynamic updates on execution)
 local function updateTriggerbot()
     if triggerbotEnabled then
         local mouse = LocalPlayer:GetMouse()
         local target = mouse.Target
+
         if target and target.Parent:IsA("Model") and target.Parent:FindFirstChild("Humanoid") then
             local humanoid = target.Parent:FindFirstChild("Humanoid")
             if humanoid and humanoid.Health > 0 then
                 mouse1click()
             end
         end
+
         wait(triggerDelay)
     end
 end
-
 
 -- Keybind Activation (Removes old bindings before setting new ones)
 _G.CamlockConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
