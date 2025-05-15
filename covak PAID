@@ -7,10 +7,11 @@ local Camera = workspace.CurrentCamera
 local RunService = game:GetService("RunService")
 
 
+
 -- Notify the user that the config is updated
 StarterGui:SetCore("SendNotification", {
     Title = "Covak Script";
-    Text = "Config Updated! Key Verified.";
+    Text = "Config Updated! Go Tapn";
     Duration = 3;
 })
 
@@ -84,18 +85,22 @@ local function updateCamlock()
     end
 end
 
--- Triggerbot Logic (Ensures dynamic updates on execution) local function updateTriggerbot() if triggerbotEnabled then local mouse = LocalPlayer:GetMouse() local target = mouse.Target
-    if target and target.Parent:IsA("Model") and target.Parent:FindFirstChild("Humanoid") then
-        local humanoid = target.Parent:FindFirstChild("Humanoid")
-        if humanoid and humanoid.Health > 0 then
-            mouse1click()
+-- Triggerbot Logic (Ensures dynamic updates on execution)
+local function updateTriggerbot()
+    if triggerbotEnabled then
+        local mouse = LocalPlayer:GetMouse()
+        local target = mouse.Target
+
+        if target and target.Parent:IsA("Model") and target.Parent:FindFirstChild("Humanoid") then
+            local humanoid = target.Parent:FindFirstChild("Humanoid")
+            if humanoid and humanoid.Health > 0 then
+                mouse1click()
+            end
         end
+
+        wait(triggerDelay)
     end
-
-    wait(triggerDelay)
 end
-end
-
 
 -- Keybind Activation (Removes old bindings before setting new ones)
 _G.CamlockConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
