@@ -84,22 +84,38 @@ local function updateCamlock()
     end
 end
 
--- Triggerbot Logic (Ensures dynamic updates on execution)
-local function updateTriggerbot()
-    if triggerbotEnabled then
-        local mouse = LocalPlayer:GetMouse()
-        local target = mouse.Target
+local function getValidTarget()
+    local mouse = LocalPlayer:GetMouse()
+    local target = mouse.Target
+    
+    -- Check if the target exists and belongs to a player model
+    if target and target.Parent:IsA("Model") and target.Parent:FindFirstChild("Humanoid") then
+        local humanoid = target.Parent:FindFirstChild("Humanoid")
+        local character = target.Parent
 
-        if target and target.Parent:IsA("Model") and target.Parent:FindFirstChild("Humanoid") then
-            local humanoid = target.Parent:FindFirstChild("Humanoid")
-            if humanoid and humanoid.Health > 0 then
-                mouse1click()
+        -- Iterate through all possible hitboxes
+        local validParts = {"Head", "Torso", "HumanoidRootPart", "LeftArm", "RightArm", "LeftLeg", "RightLeg"}
+        for _, partName in ipairs(validParts) do
+            local part = character:FindFirstChild(partName)
+            if part and humanoid.Health > 0 and part == target then
+                return true -- Target is valid
             end
         end
+    end
+    return false -- No valid target detected
+end
 
-        wait(triggerDelay)
+local function updateTriggerbot()
+    if getgenv().covakSettings.Triggerbot.Enabled then
+        if getValidTarget() then
+            mouse1click() -- Fire when aiming at any valid body part
+            task.wait(getgenv().covakSettings.Triggerbot.Delay)
+        end
     end
 end
+
+game:GetService("RunService").Heartbeat:Connect(updateTriggerbot)
+
 
 -- Keybind Activation (Removes old bindings before setting new ones)
 _G.CamlockConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
